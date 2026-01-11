@@ -17,6 +17,8 @@ export default defineConfig(({ mode }) => {
       alias: {
         '@': path.resolve(__dirname, '.'),
       }
-    }
+    },
+    // 为 GitHub Pages 部署设置基础路径 (必须与仓库名一致)
+    base: '/hollywood-set-visit/',
   };
 });
