@@ -19,6 +19,6 @@ export default defineConfig(({ mode }) => {
       }
     },
     // 为 GitHub Pages 部署设置基础路径 (必须与仓库名一致)
-    base: '/hollywood-set-visit/',
+    base: '/hollycut.ai/',
   };
 });
