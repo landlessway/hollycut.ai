@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Clapperboard, 
-  Upload, 
-  Film, 
-  Sparkles, 
-  Download, 
+import {
+  Clapperboard,
+  Upload,
+  Film,
+  Sparkles,
+  Download,
   Wand2,
   RefreshCw,
   AlertCircle,
@@ -14,10 +14,10 @@ import {
   FileText,
   LogOut,
   CheckCircle2,
-  Video, 
+  Video,
   Disc,
-  Music, 
-  Star 
+  Music,
+  Star
 } from 'lucide-react';
 import { AspectRatio, ASPECT_RATIO_LABELS } from './types';
 import { generateSetPhoto, editSetPhoto, getMoviePosterImpression } from './services/geminiService';
@@ -37,20 +37,20 @@ interface DofOption {
 }
 
 const DOF_OPTIONS: DofOption[] = [
-  { 
-    id: 'shallow', 
-    label: '浅景深 (背景虚化)', 
-    prompt: '使用f/1.2大光圈，极浅景深，背景呈现奶油般虚化效果，视觉焦点完全集中在人物面部' 
+  {
+    id: 'shallow',
+    label: '浅景深 (背景虚化)',
+    prompt: '使用f/1.2大光圈，极浅景深，背景呈现奶油般虚化效果，视觉焦点完全集中在人物面部'
   },
-  { 
-    id: 'standard', 
-    label: '标准景深 (自然)', 
-    prompt: '使用f/4标准光圈，具有自然的景深过渡，背景微虚，保留一定的环境层次感' 
+  {
+    id: 'standard',
+    label: '标准景深 (自然)',
+    prompt: '使用f/4标准光圈，具有自然的景深过渡，背景微虚，保留一定的环境层次感'
   },
-  { 
-    id: 'deep', 
-    label: '深景深 (全景清晰)', 
-    prompt: '使用f/11小光圈，深景深，人物与背景环境均清晰可见，强调人与场景的关系' 
+  {
+    id: 'deep',
+    label: '深景深 (全景清晰)',
+    prompt: '使用f/11小光圈，深景深，人物与背景环境均清晰可见，强调人与场景的关系'
   }
 ];
 
@@ -111,22 +111,22 @@ export default function App() {
   const [apiKey, setApiKey] = useState<string>('');
   const [showKeyInput, setShowKeyInput] = useState(true);
   const [keyError, setKeyError] = useState<string | null>(null);
-  
+
   const [movieName, setMovieName] = useState('');
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>(AspectRatio.TIKTOK);
-  const [dof, setDof] = useState<DofOption>(DOF_OPTIONS[0]); 
+  const [dof, setDof] = useState<DofOption>(DOF_OPTIONS[0]);
   const [imageCount, setImageCount] = useState<1 | 2>(1);
-  
+
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
-  const [promptText, setPromptText] = useState(''); 
-  
+  const [promptText, setPromptText] = useState('');
+
   // Trackers
   const [lastGeneratedMovie, setLastGeneratedMovie] = useState<string>('');
   const [lastGeneratedRatio, setLastGeneratedRatio] = useState<AspectRatio | null>(null);
   const [lastGeneratedDofPrompt, setLastGeneratedDofPrompt] = useState<string>('');
 
   const [editPrompt, setEditPrompt] = useState('');
-  
+
   const [appState, setAppState] = useState<GenerationState>({
     isGenerating: false,
     isEditing: false,
@@ -155,11 +155,11 @@ export default function App() {
     if (!trimmedMovie || !apiKey) return;
 
     const timer = setTimeout(() => {
-       getMoviePosterImpression(apiKey, trimmedMovie)
-         .then(url => {
-           if (url) setPosterBackground(url);
-         })
-         .catch(err => console.error("Failed to load background", err));
+      getMoviePosterImpression(apiKey, trimmedMovie)
+        .then(url => {
+          if (url) setPosterBackground(url);
+        })
+        .catch(err => console.error("Failed to load background", err));
     }, 1200);
 
     return () => clearTimeout(timer);
@@ -170,7 +170,7 @@ export default function App() {
 
   const buildPromptFromTemplate = (movie: string, ratio: AspectRatio, currentDof: DofOption) => {
     const moviePlaceholder = movie.trim() || '[电影名称]';
-    const ratioText = getRatioText(ratio); 
+    const ratioText = getRatioText(ratio);
 
     return PROMPT_TEMPLATE
       .split('[INSERT MOVIE NAME HERE]').join(moviePlaceholder)
@@ -189,7 +189,7 @@ export default function App() {
     setApiKey(rawKey);
     setShowKeyInput(false);
   };
-  
+
   const handleClearKey = () => {
     localStorage.removeItem('gemini_api_key');
     setApiKey('');
@@ -225,25 +225,25 @@ export default function App() {
     const currentMovie = movieName.trim();
 
     if (!activePrompt.trim()) {
-       activePrompt = buildPromptFromTemplate(currentMovie, aspectRatio, dof);
-       setLastGeneratedMovie(currentMovie);
-       setLastGeneratedRatio(aspectRatio);
-       setLastGeneratedDofPrompt(dof.prompt);
+      activePrompt = buildPromptFromTemplate(currentMovie, aspectRatio, dof);
+      setLastGeneratedMovie(currentMovie);
+      setLastGeneratedRatio(aspectRatio);
+      setLastGeneratedDofPrompt(dof.prompt);
     } else {
-       if (lastGeneratedMovie && lastGeneratedMovie !== currentMovie) {
-         activePrompt = activePrompt.split(lastGeneratedMovie).join(currentMovie);
-         setLastGeneratedMovie(currentMovie);
-       }
-       if (lastGeneratedRatio && lastGeneratedRatio !== aspectRatio) {
-         const oldRatioText = getRatioText(lastGeneratedRatio);
-         const newRatioText = getRatioText(aspectRatio);
-         activePrompt = activePrompt.split(oldRatioText).join(newRatioText);
-         setLastGeneratedRatio(aspectRatio);
-       }
-       if (lastGeneratedDofPrompt && lastGeneratedDofPrompt !== dof.prompt) {
-         activePrompt = activePrompt.split(lastGeneratedDofPrompt).join(dof.prompt);
-         setLastGeneratedDofPrompt(dof.prompt);
-       }
+      if (lastGeneratedMovie && lastGeneratedMovie !== currentMovie) {
+        activePrompt = activePrompt.split(lastGeneratedMovie).join(currentMovie);
+        setLastGeneratedMovie(currentMovie);
+      }
+      if (lastGeneratedRatio && lastGeneratedRatio !== aspectRatio) {
+        const oldRatioText = getRatioText(lastGeneratedRatio);
+        const newRatioText = getRatioText(aspectRatio);
+        activePrompt = activePrompt.split(oldRatioText).join(newRatioText);
+        setLastGeneratedRatio(aspectRatio);
+      }
+      if (lastGeneratedDofPrompt && lastGeneratedDofPrompt !== dof.prompt) {
+        activePrompt = activePrompt.split(lastGeneratedDofPrompt).join(dof.prompt);
+        setLastGeneratedDofPrompt(dof.prompt);
+      }
     }
     setPromptText(activePrompt);
 
@@ -272,7 +272,7 @@ export default function App() {
     try {
       const result = await editSetPhoto(apiKey, currentImage, editPrompt);
       setAppState(prev => ({ ...prev, isEditing: false, resultImages: [...prev.resultImages, result] }));
-      setSelectedImageIndex(appState.resultImages.length); 
+      setSelectedImageIndex(appState.resultImages.length);
       setEditPrompt('');
     } catch (err: any) {
       setAppState(prev => ({ ...prev, isEditing: false, error: err.message || "编辑失败" }));
@@ -296,12 +296,12 @@ export default function App() {
   const LoadingOverlay = ({ text }: { text: string }) => (
     <div className="absolute inset-0 z-10 bg-white/60 backdrop-blur-md flex flex-col items-center justify-center border-2 border-[#002FA7]/20 rounded-xl">
       <div className="relative w-24 h-24 mb-4">
-        <motion.div 
+        <motion.div
           className="absolute inset-0 border-4 border-[#002FA7]/20 rounded-full"
           animate={{ scale: [1, 1.1, 1], opacity: [0.5, 1, 0.5] }}
           transition={{ duration: 1.5, repeat: Infinity }}
         />
-        <motion.div 
+        <motion.div
           className="absolute inset-0 border-t-4 border-[#FF4500] rounded-full"
           animate={{ rotate: 360 }}
           transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
@@ -313,18 +313,18 @@ export default function App() {
 
   const JazzFooter = () => (
     <div className="fixed bottom-0 left-0 w-full h-10 bg-[#002FA7] text-[#FAF9F6] flex items-center justify-between px-4 z-40 overflow-hidden shadow-[0_-4px_20px_rgba(0,47,167,0.3)]">
-       <div className="flex w-full justify-between items-center text-[10px] md:text-xs font-mono tracking-widest uppercase">
-          <div className="flex items-center gap-4">
-            <span className="hidden md:inline font-serif italic font-black">HOLLYWOOD CUT</span>
-            <span>★</span>
-            <span>JAZZ & WESTERN EDITION</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <span>NO. 00-2F-A7</span>
-            <span>★</span>
-            <span className="hidden md:inline">KLEIN BLUE STUDIO</span>
-          </div>
-       </div>
+      <div className="flex w-full justify-between items-center text-[10px] md:text-xs font-mono tracking-widest uppercase">
+        <div className="flex items-center gap-4">
+          <span className="hidden md:inline font-serif italic font-black">HOLLYWOOD CUT</span>
+          <span>★</span>
+          <span>JAZZ & WESTERN EDITION</span>
+        </div>
+        <div className="flex items-center gap-4">
+          <span>NO. 00-2F-A7</span>
+          <span>★</span>
+          <span className="hidden md:inline">KLEIN BLUE STUDIO</span>
+        </div>
+      </div>
     </div>
   );
 
@@ -334,17 +334,17 @@ export default function App() {
       {/* Dynamic Poster Layer */}
       <AnimatePresence>
         {poster && (
-          <motion.div 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 0.15 }} 
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.15 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 1.5 }}
             className="absolute inset-0 z-0"
           >
-            <img 
-              src={poster} 
-              alt="Atmosphere" 
-              className="w-full h-full object-cover blur-3xl scale-110 grayscale mix-blend-multiply" 
+            <img
+              src={poster}
+              alt="Atmosphere"
+              className="w-full h-full object-cover blur-3xl scale-110 grayscale mix-blend-multiply"
             />
           </motion.div>
         )}
@@ -352,19 +352,19 @@ export default function App() {
 
       {/* Decorative Jazz/Western Elements */}
       <div className="absolute inset-0 z-0 text-[#002FA7]">
-         {/* Music Notes - Increased Opacity for Cleaner Look */}
-         <Music className="absolute top-[10%] left-[10%] w-32 h-32 -rotate-12 opacity-[0.08]" />
-         <Music className="absolute bottom-[20%] right-[15%] w-24 h-24 rotate-12 opacity-[0.08]" />
-         
-         {/* Western Stars - Increased Opacity */}
-         <Star className="absolute top-[20%] right-[10%] w-16 h-16 fill-current text-[#FF4500] opacity-20" />
-         <Star className="absolute bottom-[15%] left-[5%] w-20 h-20 fill-current text-[#8B4513] opacity-20" />
-         
-         {/* Abstract Shapes (Jazz Cutouts) */}
-         <div className="absolute top-[40%] left-[-5%] w-64 h-64 rounded-full border-4 border-dashed border-[#002FA7] opacity-10"></div>
-         <div className="absolute top-[-10%] right-[20%] w-40 h-96 bg-[#002FA7] mix-blend-multiply opacity-[0.05] rotate-45"></div>
+        {/* Music Notes - Increased Opacity for Cleaner Look */}
+        <Music className="absolute top-[10%] left-[10%] w-32 h-32 -rotate-12 opacity-[0.08]" />
+        <Music className="absolute bottom-[20%] right-[15%] w-24 h-24 rotate-12 opacity-[0.08]" />
+
+        {/* Western Stars - Increased Opacity */}
+        <Star className="absolute top-[20%] right-[10%] w-16 h-16 fill-current text-[#FF4500] opacity-20" />
+        <Star className="absolute bottom-[15%] left-[5%] w-20 h-20 fill-current text-[#8B4513] opacity-20" />
+
+        {/* Abstract Shapes (Jazz Cutouts) */}
+        <div className="absolute top-[40%] left-[-5%] w-64 h-64 rounded-full border-4 border-dashed border-[#002FA7] opacity-10"></div>
+        <div className="absolute top-[-10%] right-[20%] w-40 h-96 bg-[#002FA7] mix-blend-multiply opacity-[0.05] rotate-45"></div>
       </div>
-      
+
       {/* Gradient Wash - Subtle Warmth */}
       <div className="absolute inset-0 bg-gradient-to-br from-white via-transparent to-[#FF4500]/5 z-0"></div>
     </div>
@@ -375,7 +375,7 @@ export default function App() {
     return (
       <div className="min-h-screen bg-[#FAF9F6] text-[#002FA7] flex flex-col items-center justify-center p-6 relative overflow-hidden">
         <LivelyBackground poster={null} />
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="max-w-md w-full bg-white border-4 border-[#002FA7] p-8 shadow-[12px_12px_0px_0px_rgba(0,47,167,1)] relative z-10"
@@ -391,25 +391,25 @@ export default function App() {
               <Clapperboard className="w-10 h-10" />
             </div>
             <div className="space-y-2">
-              <h1 className="text-4xl font-black font-serif italic text-[#002FA7] tracking-tight">HOLLYWOOD CUT</h1>
+              <h1 className="text-4xl font-black font-serif italic text-[#002FA7] tracking-tight">HOLLYWOOD <span className="text-[#FF4500]">CUT</span></h1>
               <p className="text-[#8B4513] font-medium font-serif italic text-lg">
                 开启您的好莱坞片场之旅
               </p>
             </div>
             <div className="w-full space-y-4">
-              <input 
+              <input
                 ref={keyInputRef}
                 type="password"
                 placeholder="在此粘贴您的 Gemini API Key"
                 className="w-full bg-[#FAF9F6] border-2 border-[#002FA7] py-3 px-4 text-[#002FA7] font-mono focus:outline-none focus:ring-4 focus:ring-[#FF4500]/30 transition-all placeholder:text-[#002FA7]/40 text-center"
               />
               {keyError && (
-                 <div className="flex items-center justify-center gap-2 text-[#FF4500] font-bold text-xs">
-                    <AlertCircle className="w-4 h-4" />
-                    <span>{keyError}</span>
-                 </div>
+                <div className="flex items-center justify-center gap-2 text-[#FF4500] font-bold text-xs">
+                  <AlertCircle className="w-4 h-4" />
+                  <span>{keyError}</span>
+                </div>
               )}
-              <button 
+              <button
                 onClick={handleSaveKey}
                 className="w-full py-3 bg-[#002FA7] text-white font-bold text-lg hover:bg-[#FF4500] transition-colors shadow-lg flex items-center justify-center gap-2"
               >
@@ -452,18 +452,18 @@ export default function App() {
       </header>
 
       <main className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 px-6 relative z-10">
-        
+
         {/* Left Column: Controls */}
         <motion.section initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
-          
+
           {/* Upload */}
           <div className="space-y-3">
-             <div className="flex items-center gap-2 mb-1">
-               <div className="w-3 h-3 bg-[#002FA7] rotate-45"></div>
-               <h2 className="text-sm font-black font-sans tracking-widest text-[#002FA7] uppercase">上传素材 (Upload)</h2>
-               <div className="h-0.5 bg-[#002FA7]/20 flex-grow"></div>
-             </div>
-             
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-3 h-3 bg-[#002FA7] rotate-45"></div>
+              <h2 className="text-sm font-black font-sans tracking-widest text-[#002FA7] uppercase">上传素材 (Upload)</h2>
+              <div className="h-0.5 bg-[#002FA7]/20 flex-grow"></div>
+            </div>
+
             <div onClick={() => fileInputRef.current?.click()} className="group cursor-pointer relative w-full h-40 bg-white border-2 border-dashed border-[#002FA7] hover:border-[#FF4500] hover:bg-[#fffbf0] transition-all flex flex-col items-center justify-center overflow-hidden shadow-sm">
               <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
               {uploadedImage ? (
@@ -484,17 +484,17 @@ export default function App() {
 
           {/* Movie Details */}
           <div className="space-y-5 bg-white p-6 border-2 border-[#002FA7] shadow-[8px_8px_0px_0px_rgba(255,69,0,0.2)]">
-             <div className="flex items-center gap-2 mb-2">
-               <div className="w-3 h-3 bg-[#FF4500] rounded-full"></div>
-               <h2 className="text-sm font-black font-sans tracking-widest text-[#002FA7] uppercase">场景设定 (Scene)</h2>
-             </div>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-3 h-3 bg-[#FF4500] rounded-full"></div>
+              <h2 className="text-sm font-black font-sans tracking-widest text-[#002FA7] uppercase">场景设定 (Scene)</h2>
+            </div>
 
             <div className="space-y-2">
               <label className="text-xs text-[#8B4513] font-bold uppercase font-mono">电影名称</label>
               <div className="relative">
                 <Film className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#002FA7]" />
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={movieName}
                   onChange={(e) => setMovieName(e.target.value)}
                   placeholder="例如: 爱乐之城 (La La Land)"
@@ -511,8 +511,8 @@ export default function App() {
                     key={ratio}
                     onClick={() => setAspectRatio(ratio)}
                     className={`flex-1 py-2 px-1 text-[10px] md:text-xs font-bold font-mono border-2 transition-all 
-                      ${aspectRatio === ratio 
-                        ? 'bg-[#FF4500] text-white border-[#FF4500] shadow-md transform -translate-y-0.5' 
+                      ${aspectRatio === ratio
+                        ? 'bg-[#FF4500] text-white border-[#FF4500] shadow-md transform -translate-y-0.5'
                         : 'bg-transparent border-[#002FA7]/20 text-[#002FA7]/60 hover:border-[#FF4500] hover:text-[#FF4500]'
                       }`}
                   >
@@ -530,8 +530,8 @@ export default function App() {
                     key={option.id}
                     onClick={() => setDof(option)}
                     className={`flex-1 py-2 px-1 text-[10px] md:text-xs font-bold font-mono border-2 transition-all 
-                      ${dof.id === option.id 
-                        ? 'bg-[#FF4500] text-white border-[#FF4500] shadow-md transform -translate-y-0.5' 
+                      ${dof.id === option.id
+                        ? 'bg-[#FF4500] text-white border-[#FF4500] shadow-md transform -translate-y-0.5'
                         : 'bg-transparent border-[#002FA7]/20 text-[#002FA7]/60 hover:border-[#FF4500] hover:text-[#FF4500]'
                       }`}
                   >
@@ -553,9 +553,9 @@ export default function App() {
                 <FileText className="w-3 h-3" /> 生成指令
               </button>
             </div>
-            
+
             <div className="relative group">
-              <textarea 
+              <textarea
                 value={promptText}
                 onChange={(e) => setPromptText(e.target.value)}
                 placeholder="输入电影名称后点击上方按钮..."
@@ -569,32 +569,32 @@ export default function App() {
 
           {/* Action Area */}
           <div className="space-y-4 pt-4 border-t-2 border-dashed border-[#002FA7]/20">
-             <div className="flex items-center justify-between">
-                <span className="text-xs font-bold font-mono text-[#8B4513] uppercase">QUANTITY / 数量</span>
-                <div className="flex border-2 border-[#002FA7] bg-white">
-                 <button 
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold font-mono text-[#8B4513] uppercase">QUANTITY / 数量</span>
+              <div className="flex border-2 border-[#002FA7] bg-white">
+                <button
                   onClick={() => setImageCount(1)}
                   className={`px-4 py-1 font-bold text-xs ${imageCount === 1 ? 'bg-[#FF4500] text-white' : 'text-[#002FA7] hover:bg-blue-50'}`}
-                 >
-                   x1
-                 </button>
-                 <button 
+                >
+                  x1
+                </button>
+                <button
                   onClick={() => setImageCount(2)}
                   className={`px-4 py-1 font-bold text-xs ${imageCount === 2 ? 'bg-[#FF4500] text-white' : 'text-[#002FA7] hover:bg-blue-50'}`}
-                 >
-                   x2
-                 </button>
-               </div>
-             </div>
+                >
+                  x2
+                </button>
+              </div>
+            </div>
 
-             <motion.button
+            <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={handleGenerate}
               disabled={appState.isGenerating || appState.isEditing}
               className={`w-full py-5 font-black text-2xl tracking-widest shadow-[8px_8px_0px_0px_#002FA7] flex items-center justify-center gap-3 transition-all uppercase relative overflow-hidden border-4 border-[#002FA7]
-                ${appState.isGenerating 
-                  ? 'bg-gray-100 text-gray-400 border-gray-300 cursor-wait shadow-none' 
+                ${appState.isGenerating
+                  ? 'bg-gray-100 text-gray-400 border-gray-300 cursor-wait shadow-none'
                   : 'bg-[#FF4500] text-white hover:bg-[#FF5714] hover:shadow-[10px_10px_0px_0px_#002FA7]'
                 }`}
             >
@@ -607,7 +607,7 @@ export default function App() {
               )}
             </motion.button>
           </div>
-          
+
           {appState.error && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-4 bg-red-50 border-l-4 border-[#FF4500] text-[#FF4500] flex items-start gap-3">
               <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
@@ -619,10 +619,10 @@ export default function App() {
 
         {/* Right Column: Result & Edit */}
         <motion.section initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex flex-col h-full space-y-6 pb-20">
-          
+
           {/* Main Image Display */}
           <div className="relative flex-grow min-h-[500px] bg-white border-4 border-[#002FA7] flex items-center justify-center overflow-hidden shadow-2xl flex-col p-2">
-            
+
             {/* Inner Border */}
             <div className="absolute inset-2 border border-dashed border-[#002FA7]/30 pointer-events-none z-20"></div>
 
@@ -645,21 +645,21 @@ export default function App() {
 
             {/* Display Selected Image */}
             {appState.resultImages.length > 0 && (
-              <motion.img 
-                key={selectedImageIndex} 
+              <motion.img
+                key={selectedImageIndex}
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5, type: "spring" }}
-                src={appState.resultImages[selectedImageIndex]} 
-                alt="Generated Result" 
+                src={appState.resultImages[selectedImageIndex]}
+                alt="Generated Result"
                 className="w-full h-full object-contain max-h-[85vh] z-10 relative shadow-inner"
               />
             )}
-            
+
             {/* Download Button */}
             {appState.resultImages.length > 0 && !appState.isGenerating && !appState.isEditing && (
               <div className="absolute bottom-6 right-6 flex gap-2 z-30">
-                <motion.button 
+                <motion.button
                   whileHover={{ scale: 1.1, rotate: 10 }}
                   whileTap={{ scale: 0.9 }}
                   onClick={handleDownload}
@@ -674,22 +674,22 @@ export default function App() {
 
           {/* Gallery / Selection for x2 */}
           {appState.resultImages.length > 1 && (
-             <div className="flex gap-4 justify-center flex-wrap">
-               {appState.resultImages.map((img, idx) => (
-                 <button
-                   key={idx}
-                   onClick={() => setSelectedImageIndex(idx)}
-                   className={`relative w-24 h-24 border-4 transition-all transform ${selectedImageIndex === idx ? 'border-[#FF4500] rotate-2 scale-110 shadow-lg z-10' : 'border-gray-200 rotate-0 scale-100 hover:rotate-1'}`}
-                 >
-                   <img src={img} alt={`take-${idx}`} className="w-full h-full object-cover" />
-                   {selectedImageIndex === idx && (
-                     <div className="absolute -top-2 -right-2 bg-[#FF4500] rounded-full p-1 border-2 border-white">
-                        <CheckCircle2 className="w-4 h-4 text-white" />
-                     </div>
-                   )}
-                 </button>
-               ))}
-             </div>
+            <div className="flex gap-4 justify-center flex-wrap">
+              {appState.resultImages.map((img, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setSelectedImageIndex(idx)}
+                  className={`relative w-24 h-24 border-4 transition-all transform ${selectedImageIndex === idx ? 'border-[#FF4500] rotate-2 scale-110 shadow-lg z-10' : 'border-gray-200 rotate-0 scale-100 hover:rotate-1'}`}
+                >
+                  <img src={img} alt={`take-${idx}`} className="w-full h-full object-cover" />
+                  {selectedImageIndex === idx && (
+                    <div className="absolute -top-2 -right-2 bg-[#FF4500] rounded-full p-1 border-2 border-white">
+                      <CheckCircle2 className="w-4 h-4 text-white" />
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
           )}
 
           {/* Image Editing (Nano Banana) */}
@@ -700,17 +700,17 @@ export default function App() {
                   <Wand2 className="w-4 h-4" />
                   <span className="text-xs font-black font-mono uppercase tracking-wider">POST-PRODUCTION (Magic Edit)</span>
                 </div>
-                
+
                 <div className="flex gap-2">
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={editPrompt}
                     onChange={(e) => setEditPrompt(e.target.value)}
                     placeholder="输入指令: 增加噪点, 变成黑白, 移除路人..."
                     className="flex-grow bg-[#FAF9F6] border border-[#002FA7]/30 py-2 px-4 text-xs md:text-sm text-[#002FA7] focus:outline-none focus:border-[#FF4500] font-mono"
                     onKeyDown={(e) => e.key === 'Enter' && handleEdit()}
                   />
-                  <button 
+                  <button
                     onClick={handleEdit}
                     disabled={!editPrompt.trim() || appState.isEditing}
                     className="bg-[#002FA7] text-white px-4 py-2 text-xs font-bold uppercase tracking-wider hover:bg-[#002280] disabled:opacity-50 disabled:cursor-not-allowed shadow-md flex items-center gap-2"
