@@ -1,0 +1,5 @@
+{
+  "name": "Hollywood Set Visit",
+  "description": "Generate hyper-realistic behind-the-scenes movie set photos and edit them using Gemini Nano.",
+  "requestFramePermissions": []
+}
