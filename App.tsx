@@ -393,7 +393,7 @@ export default function App() {
             <div className="space-y-2">
               <h1 className="text-4xl font-black font-serif italic text-[#002FA7] tracking-tight">HOLLYWOOD <span className="text-[#FF4500]">CUT</span></h1>
               <p className="text-[#8B4513] font-medium font-serif italic text-lg">
-                开启您的好莱坞片场之旅
+                好莱坞片场之旅
               </p>
             </div>
             <div className="w-full space-y-4">
