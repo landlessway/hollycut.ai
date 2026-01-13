@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import VConsole from 'vconsole';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Clapperboard,
@@ -140,6 +141,15 @@ export default function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const keyInputRef = useRef<HTMLInputElement>(null);
 
+  // --- Mobile Debugging ---
+  useEffect(() => {
+    // Only init VConsole in development or if explicitly requested via URL param ?debug=true
+    if (import.meta.env.DEV || new URLSearchParams(window.location.search).get('debug') === 'true') {
+      const vConsole = new VConsole();
+      return () => { vConsole.destroy(); };
+    }
+  }, []);
+
   // --- Initialization ---
   useEffect(() => {
     const storedKey = localStorage.getItem('gemini_api_key');
@@ -279,15 +289,73 @@ export default function App() {
     }
   };
 
-  const handleDownload = () => {
+  const dataURLtoBlob = (dataurl: string) => {
+    try {
+      const arr = dataurl.split(',');
+      if (arr.length < 2) return null;
+      const match = arr[0].match(/:(.*?);/);
+      const mime = match ? match[1] : 'image/png';
+      const bstr = atob(arr[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+      }
+      return new Blob([u8arr], { type: mime });
+    } catch (e) {
+      console.error("Blob conversion failed", e);
+      return null;
+    }
+  };
+
+  const handleDownload = async () => {
     const currentImage = appState.resultImages[selectedImageIndex];
-    if (currentImage) {
+    if (!currentImage) return;
+
+    try {
+      const blob = dataURLtoBlob(currentImage);
+      if (!blob) {
+        throw new Error("Image data is invalid");
+      }
+
+      const file = new File([blob], `hollywood-cut-${Date.now()}.png`, { type: blob.type });
+
+      // Try Web Share API first (Mobile friendly)
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: 'Hollywood Cut',
+            text: 'My Hollywood Set Visit Photo'
+          });
+          return; // Shared successfully
+        } catch (shareError) {
+          // User cancelled or share failed, proceed to fallback
+          console.log('Share dismissed, falling back to download');
+        }
+      }
+
+      // Fallback: Blob URL Download
+      const blobUrl = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.href = currentImage;
+      link.href = blobUrl;
       link.download = `hollywood-cut-${Date.now()}.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      
+      // Cleanup
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+
+    } catch (error) {
+      console.error("Download/Share failed:", error);
+      // Fallback for extreme cases: Open Image directly
+      const newTab = window.open();
+      if (newTab) {
+        newTab.document.write(`<img src="${currentImage}" style="width:100%;" />`);
+        newTab.document.title = "Save Image";
+        alert("请长按图片保存");
+      }
     }
   };
 
